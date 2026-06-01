@@ -520,8 +520,10 @@ window.confirmarActivar = function(codigo) {
 };
 
 async function cambiarActiva(codigo, valor) {
+  toast('⏳ Guardando...');
   let errores = [];
-  // Actualizar nodo admin (crear si no existe, ej. est17 hardcodeado)
+
+  // 1. Actualizar nodo admin (crear si no existe)
   try {
     const snapAdmin = await get(ref(db, 'admin/escuelas/' + codigo));
     if (snapAdmin.exists()) {
@@ -531,19 +533,31 @@ async function cambiarActiva(codigo, valor) {
       await set(ref(db, 'admin/escuelas/' + codigo), datosActuales);
     }
   } catch(e) { errores.push('admin: ' + e.message); }
-  // Actualizar nodo escuela
+
+  // 2. Actualizar nodo escuela/configuracion/perfil
   try {
     await update(ref(db, 'escuelas/' + codigo + '/configuracion/perfil'), { activa: valor });
   } catch(e) { errores.push('escuela: ' + e.message); }
 
-  if (errores.length === 0) {
-    // Actualizar estado local inmediatamente sin esperar onValue
-    if (escuelasData[codigo]) escuelasData[codigo].activa = valor;
-    renderDashboard();
-    toast(valor ? '✅ Licencia activada' : '🔒 Licencia bloqueada');
-  } else {
+  if (errores.length > 0) {
     toast('❌ Error: ' + errores.join(' | '));
+    return;
   }
+
+  // 3. Verificar que Firebase realmente guardó el valor
+  try {
+    const verificacion = await get(ref(db, 'admin/escuelas/' + codigo + '/activa'));
+    const valorReal = verificacion.val();
+    if (valorReal !== valor) {
+      toast('⚠️ No se confirmó el cambio. Intente de nuevo.');
+      return;
+    }
+  } catch(e) { /* sin internet, continuar */ }
+
+  // 4. Actualizar estado local y re-render
+  if (escuelasData[codigo]) escuelasData[codigo].activa = valor;
+  renderDashboard();
+  toast(valor ? '✅ Licencia ACTIVADA correctamente' : '🔒 Licencia BLOQUEADA correctamente');
 }
 
 // ── RENOVAR VENCIMIENTO ──
