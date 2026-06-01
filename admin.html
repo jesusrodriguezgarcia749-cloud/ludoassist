@@ -179,8 +179,8 @@ main{padding:1rem;}
     <div class="modal-title" id="mc-title">¿Confirmar acción?</div>
     <div class="modal-desc" id="mc-desc">Esta acción no se puede deshacer.</div>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
-      <button id="mc-btn-ok" class="btn-confirm-rojo" onclick="ejecutarConfirmado()">Confirmar</button>
+      <button class="btn-cancel" id="mc-btn-cancel">Cancelar</button>
+      <button id="mc-btn-ok" class="btn-confirm-rojo">Confirmar</button>
     </div>
   </div>
 </div>
@@ -648,6 +648,8 @@ function limpiarFormulario() {
 }
 
 // ── MODAL ──
+let _callbackModal = null;
+
 function mostrarModal(icono, titulo, desc, tipo, callback) {
   document.getElementById('mc-icon').textContent  = icono;
   document.getElementById('mc-title').textContent = titulo;
@@ -655,14 +657,23 @@ function mostrarModal(icono, titulo, desc, tipo, callback) {
   const btn = document.getElementById('mc-btn-ok');
   btn.className = tipo==='rojo' ? 'btn-confirm-rojo' : 'btn-confirm-verde';
   btn.textContent = tipo==='rojo' ? 'Sí, bloquear' : 'Sí, activar';
-  window.accionPendiente = callback;
+  _callbackModal = callback;
   document.getElementById('modal-confirm').classList.add('show');
 }
-window.cerrarModal = () => { document.getElementById('modal-confirm').classList.remove('show'); window.accionPendiente=null; };
-window.ejecutarConfirmado = async () => {
+
+function cerrarModal() {
+  document.getElementById('modal-confirm').classList.remove('show');
+  _callbackModal = null;
+}
+window.cerrarModal = cerrarModal;
+
+// Listeners directos en los botones del modal
+document.getElementById('mc-btn-cancel').addEventListener('click', () => cerrarModal());
+document.getElementById('mc-btn-ok').addEventListener('click', async () => {
+  const cb = _callbackModal;
   cerrarModal();
-  if (window.accionPendiente) await window.accionPendiente();
-};
+  if (cb) await cb();
+});
 
 // ── TABS ──
 window.cambiarTab = function(tab) {
