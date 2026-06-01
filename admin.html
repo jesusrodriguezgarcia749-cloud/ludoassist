@@ -343,7 +343,7 @@ const db  = getDatabase(app);
 
 // ── ESTADO ──
 let escuelasData = {};
-let accionPendiente = null;
+window.accionPendiente = null;
 
 // ── LOGIN ──
 window.verificarPin = async function() {
@@ -655,13 +655,13 @@ function mostrarModal(icono, titulo, desc, tipo, callback) {
   const btn = document.getElementById('mc-btn-ok');
   btn.className = tipo==='rojo' ? 'btn-confirm-rojo' : 'btn-confirm-verde';
   btn.textContent = tipo==='rojo' ? 'Sí, bloquear' : 'Sí, activar';
-  accionPendiente = callback;
+  window.accionPendiente = callback;
   document.getElementById('modal-confirm').classList.add('show');
 }
-window.cerrarModal = () => { document.getElementById('modal-confirm').classList.remove('show'); accionPendiente=null; };
+window.cerrarModal = () => { document.getElementById('modal-confirm').classList.remove('show'); window.accionPendiente=null; };
 window.ejecutarConfirmado = async () => {
   cerrarModal();
-  if (accionPendiente) await accionPendiente();
+  if (window.accionPendiente) await window.accionPendiente();
 };
 
 // ── TABS ──
